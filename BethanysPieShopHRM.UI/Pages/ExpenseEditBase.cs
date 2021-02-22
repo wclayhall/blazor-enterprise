@@ -21,6 +21,9 @@ namespace BethanysPieShopHRM.UI.Pages
         public ICurrencyDataService CurrencyDataService { get; set; }
 
         [Inject]
+        public IExpenseApprovalService ExpenseApprovalService { get; set; }
+
+        [Inject]
         public NavigationManager NavigationManager { get; set; }
 
         public Expense Expense { get; set; } = new Expense();
@@ -60,57 +63,7 @@ namespace BethanysPieShopHRM.UI.Pages
             Expense.EmployeeId = int.Parse(EmployeeId);
             Expense.CurrencyId = int.Parse(CurrencyId);
 
-            var employee = await EmployeeDataService.GetEmployeeDetails(Expense.EmployeeId);
-
-            if (!employee.IsFTE)
-            {
-                switch (Expense.ExpenseType)
-                {
-                    case ExpenseType.Conference:
-                        Expense.Status = ExpenseStatus.Denied;
-                        break;
-                    case ExpenseType.Hotel:
-                        Expense.Status = ExpenseStatus.Denied;
-                        break;
-                    case ExpenseType.Travel:
-                        Expense.Status = ExpenseStatus.Denied;
-                        break;
-                    case ExpenseType.Food:
-                        Expense.Status = ExpenseStatus.Denied;
-                        break;
-                }
-            }
-            else
-            {
-                if (Expense.ExpenseType == ExpenseType.Food && Expense.Amount > 250)
-                {
-                    Expense.Status = ExpenseStatus.Denied;
-                }
-
-                if (Expense.Amount > 5000)
-                {
-                    Expense.Status = ExpenseStatus.Denied;
-                }
-            }
-
-            if (employee.JobCategory.JobCategoryName == "Sales" && Expense.ExpenseType == ExpenseType.Gift)
-            {
-                Expense.Status = ExpenseStatus.Denied;
-            }
-
-            if (employee.IsOPEX)
-            {
-                switch (Expense.ExpenseType)
-                {
-                    case ExpenseType.Conference:
-                        Expense.Status = ExpenseStatus.Denied;
-                        break;
-                    case ExpenseType.Training:
-                        Expense.Status = ExpenseStatus.Denied;
-                        break;
-                }
-            }
-
+            Expense.Status = await ExpenseApprovalService.GetExpenseStatus(Expense);
 
             if (Expense.ExpenseId == 0) // New 
             {
